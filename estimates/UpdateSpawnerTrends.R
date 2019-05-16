@@ -114,7 +114,7 @@ cax$ext_datasource <- "CAX"
 sps <- read.csv("SPS_MariCheck02012016.csv",stringsAsFactors=FALSE)
 sps$ext_datasource <- "SPS"
 
-m <- mongo(collection = "SpawnerAbundance_4-15-2019",  db = "salmonetics", url = "mongodb://localhost")
+m <- mongo(collection = "SpawnerAbundance_05-09-2019",  db = "salmonetics", url = "mongodb://localhost")
 
 #pops <- summarise(group_by(cax,POPID))
 
@@ -133,6 +133,17 @@ npt$UpdDate <- mdy(npt$UpdDate)
 names(npt) <- toupper(names(npt))
 npt <- merge(select(pops,NMFS_POPID,POPID),npt)
 npt$ext_datasource <- "NPT"
+
+
+#new NPS ISEMP dataset
+isemp_pops <- read.csv("ISEMP_Populations.csv",stringsAsFactors=FALSE)
+npt <- read.csv("RK_IPTDS_escapement_4_19_19.csv",stringsAsFactors=FALSE) %>% filter(Median>0)
+npt$TRT_POP <- npt$TRT.POP
+npt <- select(npt,1,10,5,6,7,8) %>% merge(isemp_pops) %>% select(7,8,1,2,9,3,4,5,6)
+names(npt) <- c("POPID","NMFS_POPID","Species","TRT_POP","Popname","SPAWNINGYEAR","NOSAIJ","NOSAIJLOWERLIMIT","NOSAIJUPPERLIMIT")
+npt$NOSAIJALPHA <- 0.5
+npt$ext_datasource <- "NPT"
+
 
 isemp <- read.csv("AbundanceAddendum_07-18-2017.csv", stringsAsFactors=FALSE)
 isemp <- select(isemp,PopID,Species,Year,Spawners,FracWild,Age2,Age3,Age4,Age5,Age6,notes)
@@ -206,13 +217,19 @@ getCAX <- function(df){
   return(df1)
 }
 
+getNPT <- function(df){
+  df$NOSAEJ <- ifelse(df$Species != "Chinook",df$NOSAIJ,NA)
+  df$NOSAIJ <- ifelse(df$Species != "Chinook",df$NOSAIJ,NA)
+  return(getCAX(df))
+}
+
 getKlickitat <- function(){
   
   
 }
 
 #best <- read.csv("SpawnerBestData.csv", stringsAsFactors=FALSE)
-best <- read.csv("SpawnerBestData_4-19-2019.csv", stringsAsFactors=FALSE)
+best <- read.csv("SpawnerBestData_5-13-2019.csv", stringsAsFactors=FALSE)
 combined <- data.frame()
 for(i in 1:nrow(best)){
   if(best$INCLUDE[i]==TRUE){
@@ -220,7 +237,7 @@ for(i in 1:nrow(best)){
     print(paste(best$QUERY[i], nrow(temp)))
     if(nrow(temp)>0){
       if(temp$ext_datasource[1]=="SPS" | temp$ext_datasource[1]=="ISEMP")combined <- rbind(combined,getSPS(temp))
-      #else if (temp$ext_datasource[1]=="YAKAMA_Klickitat")combined <- rbind(combined,getKlickitat(temp))
+      else if (temp$ext_datasource[1]=="NPT")combined <- rbind(combined,getNPT(temp))
       else combined <- rbind(combined,getCAX(temp))
       
     }
@@ -230,6 +247,7 @@ for(i in 1:nrow(best)){
   rvars <- c("NOSAIJ","NOSAEJ","TSAIJ","TSAEJ")
   for(i in 1:length(rvars))combined[rvars[i]] <- round(combined[rvars[i]])
 }
+
 
 geomean<-function(x){
   iii<-(x>0)
@@ -287,7 +305,8 @@ combi <- merge(combined,gmeans.all)
 #write.csv(combi,"combined_abundance_geomeans_3-04-2019.csv",row.names=FALSE)
 #write.csv(combi,"combined_abundance_geomeans_3-25-2019.csv",row.names=FALSE)
 #write.csv(combi,"combined_abundance_geomeans_3-27-2019.csv",row.names=FALSE)
-write.csv(combi,"combined_abundance_geomeans_4-15-2019.csv",row.names=FALSE)
+#write.csv(combi,"combined_abundance_geomeans_4-19-2019.csv",row.names=FALSE)
+write.csv(combi,"combined_abundance_geomeans_5-13-2019.csv",row.names=FALSE)
 #get json page for each pop-year
 #first, get ids of those used, then loop through those
 
