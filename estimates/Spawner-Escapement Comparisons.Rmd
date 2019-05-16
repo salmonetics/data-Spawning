@@ -1,0 +1,319 @@
+---
+title: "SR Spawner-Escapement Comparisons"
+output: html_notebook
+---
+
+```{r,echo=F}
+iptds <- read.csv("IPTDS_LGR_Escapement.csv",stringsAsFactors=F)
+iptds$Source <- "IPTDS"
+tac <- read.csv("TAC_LGR_Escapements.csv",stringsAsFactors=F)
+tac$Source <- "TAC"
+tac$Lower <- NaN
+tac$Upper <- NaN
+
+
+lgr <- rbind(select(iptds,Source,Species,Year,Count,Lower,Upper),select(tac,Source,Species,Year,Count,Lower,Upper))
+lgr$Year <- as.character(lgr$Year)
+```
+
+```{r,echo=F}
+getSPS <- function(df){
+  vars <- c("NMFS_POPID","NUMBER_OF_SPAWNERS","BROOD_YEAR","FRACWILD","AGE_2_RETURNS","AGE_3_RETURNS","AGE_4_RETURNS","AGE_5_RETURNS","AGE_6_RETURNS","AGE_7_RETURNS")
+  df <- filter(df,NUMBER_OF_SPAWNERS >= 0)
+  for(i in 1:length(vars)){
+    if(!vars[i]%in% names(df))df[vars[i]] <- NA
+  }
+  NMFS_POPID <- df$NMFS_POPID
+  SPAWNINGYEAR <- df$BROOD_YEAR
+  NOSAIJ <- ifelse(df$FRACWILD > -1, df$FRACWILD*df$NUMBER_OF_SPAWNERS, NA)
+  NOSAEJ <- ifelse(df$SPECIES== "Chinook",ifelse(df$AGE_3_RETURNS>-1,(1-df$AGE_3_RETURNS)*NOSAIJ,NA),NA)
+  PHOSIJ <- ifelse(df$FRACWILD > -1,1-df$FRACWILD, NA)
+  PHOSEJ <- PHOSIJ
+  NOSJF <- ifelse(df$SPECIES== "Chinook",ifelse(df$AGE_3_RETURNS>-1,df$AGE_3_RETURNS,NA),NA)
+  HOSJF <- NOSJF
+  TSAIJ <- df$NUMBER_OF_SPAWNERS
+  TSAEJ <- ifelse(df$SPECIES== "Chinook",ifelse(df$AGE_3_RETURNS>-1,(1-df$AGE_3_RETURNS)*TSAIJ,NA),TSAIJ)
+  AGE2PROP <- ifelse(df$AGE_2_RETURNS>=0,df$AGE_2_RETURNS,NA)
+  AGE3PROP <- ifelse(df$AGE_3_RETURNS>=0,df$AGE_3_RETURNS,NA)
+  AGE4PROP <- ifelse(df$AGE_4_RETURNS>=0,df$AGE_4_RETURNS,NA)
+  AGE5PROP <- ifelse(df$AGE_5_RETURNS>=0,df$AGE_5_RETURNS,NA)
+  AGE6PROP <- ifelse(df$AGE_6_RETURNS>=0,df$AGE_6_RETURNS,NA)
+  AGE7PROP <- ifelse(df$AGE_7_RETURNS>=0,df$AGE_7_RETURNS,NA)
+  ext_datasource <- df$ext_datasource
+  
+  df1 <- data.frame(NMFS_POPID=NMFS_POPID,SPAWNINGYEAR=SPAWNINGYEAR,NOSAIJ=NOSAIJ,NOSAEJ=NOSAEJ,PHOSIJ=PHOSIJ,PHOSEJ=PHOSEJ,NOSJF=NOSJF,HOSJF=HOSJF,TSAIJ=TSAIJ,TSAEJ=TSAEJ,AGE2PROP=AGE2PROP,AGE3PROP=AGE3PROP,AGE4PROP=AGE4PROP,AGE5PROP=AGE5PROP,AGE6PROP=AGE6PROP,AGE7PROP=AGE7PROP,ext_datasource=ext_datasource)  
+  
+  return(df1)
+}
+
+sps <- read.csv("SPS_MariCheck02012016.csv",stringsAsFactors=F)
+sps$ext_datasource <- "SPS"
+sps <- getSPS(sps)
+sps$Year <- as.character(sps$SPAWNINGYEAR)
+sps$type <- "spawners"
+```
+
+
+```{r,echo=F}
+cax <- read.csv("ca-data-all 04-12-2019_NOSA.csv",stringsAsFactors=F)
+cax$Year <- as.character(cax$SPAWNINGYEAR)
+cax$Source <- "CAX"
+cax$type <- "spawners"
+```
+
+```{r,echo=F}
+isemp <- read.csv("ISEMP_Updates_4-2019.csv",stringsAsFactors=F) %>% filter(Species=="Chinook")
+isemp1 <- isemp %>% gather("X2010","X2011","X2012","X2013","X2014","X2015",key="Year",value="Count")
+isemp1$Year <- substring(isemp1$Year,2,5)
+isemp2 <- isemp %>% gather("X2010CV","X2011CV","X2012CV","X2013CV","X2014CV","X2015CV",key="Year",value="CV")
+isemp2$Year <- substring(isemp2$Year,2,5)
+iesmp2 <- select(isemp2,Group,Year,CV)
+isemp3 <- merge(isemp1,isemp2)
+isemp3$Lower <- isemp3$Count - 1.96*(isemp3$CV*isemp3$Count)
+isemp3$Lower <- ifelse(isemp3$Lower < 0,0, isemp3$Lower)
+isemp3$Upper <- isemp3$Count + 1.96*(isemp3$CV*isemp3$Count)
+isemp3$Source <- "ISEMP"
+isemp <- isemp3
+isemp$type="escapement"
+
+addYears <- function(df,count1,se1,count2,se2,source="ISEMP"){
+  isemp.data <- rbind(df,data.frame(Source=c(source,source),Year=c("2016","2017"),Count=c(count1,count2),Lower=c(count1-se1*1.96,count2-se2*1.96),Upper=c(count1+se1*1.96,count2+se2*1.96),type=c("escapement","escapement")))
+
+  return(isemp.data)
+}
+```
+
+
+```{r,echo=F}
+npt <- read.csv("RK_IPTDS_escapement_4_19_19.csv",stringsAsFactors=F)
+npt$Year <- as.character(npt$Spawn.Year)
+npt$Count <- npt$Median
+npt$Lower <- npt$Low_95CI
+npt$Upper <- npt$Upp_95CI
+npt$Source <- "NPT"
+npt$type="escapement"
+```
+
+```{r,echo=F}
+npt0 <- read.csv("NPTSpawnerData.csv",stringsAsFactors=F)
+npt0$Year <- as.character(npt0$SpawningYear)
+npt0$Count <- npt$Median
+npt$Lower <- npt$Low_95CI
+npt0$Upper <- npt$Upp_95CI
+npt0$Source <- "NPT"
+npt0$type="escapement"
+```
+
+NPTSpawnerData.csv
+
+```{r,fig.height=4,fig.width=8,warning=F,echo=F}
+dodge <- position_dodge(width=0.6)
+ggplot(lgr %>% filter(Species=="Chinook"),aes(Year,Count,fill=Source)) + geom_bar(stat="identity", position="dodge",width=.6) + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="black",size=.5,width=.25, position=dodge) + ggtitle("Wild Sp/Su Chinook Escapement Estimate to LGR")
+```
+
+```{r,fig.height=4,fig.width=8,warning=F,echo=F}
+ggplot(lgr %>% filter(Species=="Steelhead"),aes(Year,Count,fill=Source)) + geom_bar(stat="identity", position="dodge",width=.6) + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="black",size=.5,width=.25,position=dodge) + ggtitle("Wild Steelhead Escapement Estimate to LGR")
+```
+
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==9,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==9,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Imnaha River") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,882,80.2,330,41.5)
+npt.data <- npt %>% filter(TRT.POP=="IRMAI") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity",width=.8) + facet_grid(Source ~ .) + ggtitle("Imnaha River Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==7,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==7,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Catherine Creek") %>%  select(Source,Year,Count,Lower,Upper,type)
+npt.data <- npt %>% filter(TRT.POP=="GRCAT") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width =.8) + facet_grid(Source ~ .) + ggtitle("Catherine Creek Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==8,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==8,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Grande Ronde River upper mainstem") %>% select(Source,Year,Count,Lower,Upper,type)
+npt.data <- npt %>% filter(TRT.POP=="GRUMA") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Upper Grande Ronde River Mainstem Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==17,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==17,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Big Creek") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,691,70.1,163,27.8)
+npt.data <- npt %>% filter(TRT.POP=="MFBIG") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Big Creek Chinook (MF Salmon)") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==30,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==30,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Lemhi River") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,259,53.8,123,27.2)
+npt.data <- npt %>% filter(TRT.POP=="SRLEM") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Lemhi River Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==37,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==37,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Yankee Fork Salmon River") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,113,25.1,38,13.6)
+npt.data <- npt %>% filter(TRT.POP=="SRYFS") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Yankee Fork Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==32,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==32,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Pahsimeroi River") %>% select(Source,Year,Count,Lower,Upper,type)
+weir.data <- data.frame(Source=rep("PAH-Weir",3),Year=c("2010","2011","2012","2013","2014","2015","2016","2017","2018"),Count=c(293,380,216,376,619,417,367,99,82))
+weir.data$Lower <- NaN
+weir.data$Upper <- NaN
+weir.data$type <- "weir count"
+npt.data <- npt %>% filter(TRT.POP=="SRPAH") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data,weir.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Pahsimeroi River Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==35,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==35,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Sawtooth Hatchery Weir") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,261,40.5,63,18.9)
+weir.data <- data.frame(Source=rep("Sawtooth-Weir",3),Year=c("2010","2011","2012","2013","2014","2015","2016","2017","2018"),Count=c(719,599,504,400,477,222,194,67,59))
+weir.data$Lower <- NaN
+weir.data$Upper <- NaN
+weir.data$type="weir count"
+npt.data <- npt %>% filter(TRT.POP=="SRUMA") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,cax.nosaej,isemp.data,npt.data,weir.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Upper Salmon River Mainstem Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==29,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==29,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="East Fork Salmon River") %>% select(Source,Year,Count,Lower,Upper,type)
+weir.data <- data.frame(Source=rep("Trap (EF Salmon)",4),Year=c("2010","2011","2012","2014"),Count=c(271,204,240,322))
+weir.data$Lower <- NaN
+weir.data$Upper <- NaN
+weir.data$type <- "weir count"
+npt.data <- npt %>% filter(TRT.POP=="SREFS") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,isemp.data,npt.data,weir.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("East Fork Salmon River Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==28,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==28,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="South Fork Salmon River") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.weir <- isemp %>% filter(Group=="McCall Hatchery Weir") %>% select(Source,Year,Count,Lower,Upper,type) %>% mutate(Source="ISEMP Weir")
+isemp.data <- addYears(isemp.data,560,56.5,139,23.7)
+weir.data <- data.frame(Source=rep("SFSR-Weir",3),Year=c("2010","2011","2012","2013","2014","2015","2016","2017","2018"),Count=c(1348,698,456,406,710,431,248,99,118))
+weir.data$Lower <- NaN
+weir.data$Upper <- NaN
+weir.data$type <- "weir count"
+npt.data <- npt %>% filter(TRT.POP=="SFSMA") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,isemp.data,isemp.weir,npt.data,weir.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("South Fork Salmon River Mainstem Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==28,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==28,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+weir.data <- data.frame(Source=rep("SFSR-Weir",3),Year=c("2010","2011","2012","2013","2014","2015","2016","2017","2018"),Count=c(1348,698,456,406,710,431,248,99,118))
+weir.data$Lower <- NaN
+weir.data$Upper <- NaN
+weir.data$type <- "weir count"
+isemp.weir <- isemp %>% filter(Group=="McCall Hatchery Weir") %>% select(Source,Year,Count,Lower,Upper,type) %>% mutate(Source="ISEMP Weir")
+npt.data <- npt %>% filter(TRT.POP=="SFSMA") %>% select(Source,Year,Count,Lower,Upper,type)
+
+data <- rbind(cax.nosaij,isemp.weir,weir.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("South Fork Salmon River Mainstem Chinook") + ggtitle("South Fork Salmon River Mainstem Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+sps.nosaij <- sps %>% filter(NMFS_POPID==65,Year>2010) %>% mutate(Count=NOSAIJ,Source="SPS:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+sps.nosaej <- sps %>% filter(NMFS_POPID==65,Year>2010) %>% mutate(Count=NOSAEJ,Source="SPS:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="EFSF Salmon River") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,589,56.9,144,24.1)
+weir.data <- data.frame(Source=rep("Trap (Johnson Creek)",3),Year=c("2010","2014","2015","2016","2017","2018"),Count=c(593,1070,528,509,228,389))
+weir.data$Lower <- NaN
+weir.data$Upper <- NaN
+weir.data$type <- "weir count"
+npt.data <- npt %>% filter(TRT.POP=="SFEFS") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(sps.nosaij,isemp.data,npt.data,weir.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("East Fork South Fork Salmon River Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+sps.nosaij <- sps %>% filter(NMFS_POPID==90,Year>2010) %>% mutate(Count=NOSAIJ,Source="SPS:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+sps.nosaej <- sps %>% filter(NMFS_POPID==90,Year>2010) %>% mutate(Count=NOSAEJ,Source="SPS:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Secesh River") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,496,52.3,177,26.2)
+npt.data <- npt %>% filter(TRT.POP=="SFSEC") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(sps.nosaej,sps.nosaij,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Secesh River Chinook") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+## SR Steelhead
+```{r,echo=F}
+isemp.sh <- read.csv("ISEMP_Updates_4-2019.csv",stringsAsFactors=F) %>% filter(Species=="Steelhead")
+isemp1 <- isemp.sh %>% gather("X2010","X2011","X2012","X2013","X2014","X2015",key="Year",value="Count")
+isemp1$Year <- substring(isemp1$Year,2,5)
+isemp2 <- isemp.sh %>% gather("X2010CV","X2011CV","X2012CV","X2013CV","X2014CV","X2015CV",key="Year",value="CV")
+isemp2$Year <- substring(isemp2$Year,2,5)
+iesmp2 <- select(isemp2,Group,Year,CV)
+isemp3 <- merge(isemp1,isemp2)
+isemp3$Lower <- isemp3$Count - 1.96*(isemp3$CV*isemp3$Count)
+isemp3$Lower <- ifelse(isemp3$Lower < 0,0, isemp3$Lower)
+isemp3$Upper <- isemp3$Count + 1.96*(isemp3$CV*isemp3$Count)
+isemp3$Source <- "ISEMP"
+isemp.sh <- isemp3
+isemp.sh$type <- "escapement"
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==84,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==84,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Grande Ronde River upper mainstem") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,1605,92.6,530,33.3)
+npt.data <- npt %>% filter(TRT.POP=="GRUMA-s") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Grande Ronde Upper Mainstem Steelhead") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==85,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==85,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Joseph Creek") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,1390,118,585,41.9)
+npt.data <- npt %>% filter(TRT.POP=="GRJOS-s") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaij,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Joseph Creek Steelhead") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+```{r,fig.height=6,fig.width=6,warning=F,echo=F}
+cax.nosaij <- cax %>% filter(POPID==90,Year>=2010) %>% mutate(Count=NOSAIJ,Source="CAX:NOSAIJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+cax.nosaej <- cax %>% filter(POPID==90,Year>=2010) %>% mutate(Count=NOSAEJ,Source="CAX:NOSAEJ",Lower=NaN,Upper=NaN) %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- isemp %>% filter(Group=="Asotin Creek") %>% select(Source,Year,Count,Lower,Upper,type)
+isemp.data <- addYears(isemp.data,1331,84.8,279,21.7)
+npt.data <- npt %>% filter(TRT.POP=="SNASO-s") %>% select(Source,Year,Count,Lower,Upper,type)
+data <- rbind(cax.nosaej,isemp.data,npt.data)
+ggplot(data,aes(Year,Count,fill=type)) + geom_bar(stat="identity", width=.8) + facet_grid(Source ~ .) + ggtitle("Asotin Creek Steelhead") + geom_errorbar(aes(ymin = Lower, ymax = Upper),colour="blue",size=.5,width=.25)
+```
+
+

@@ -218,7 +218,8 @@ getCAX <- function(df){
 }
 
 getNPT <- function(df){
-  df$NOSAEJ <- ifelse(df$Species != "Chinook",df$NOSAIJ,NA)
+  #df$NOSAEJ <- ifelse(df$Species != "Chinook",df$NOSAIJ,NA)
+  df$NOSAEJ <- df$NOSAIJ
   df$NOSAIJ <- ifelse(df$Species != "Chinook",df$NOSAIJ,NA)
   return(getCAX(df))
 }
