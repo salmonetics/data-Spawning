@@ -1,0 +1,40 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r,echo=F}
+library(tidyverse)
+```
+
+```{r,echo=F}
+beechie <- read.csv("Beechie.csv",stringsAsFactors=F)
+beechie$confined <- ifelse(beechie$major_type=="confined",1000,0)
+huc <- read.csv("BeechieHUC6.csv",stringsAsFactors=F) %>% select(3,4,5)
+names(huc) <- c("OBJECTID","distance","HUC12")
+
+huc6 <- read.csv("../HUC6_names.csv",stringsAsFactors=F)
+names(huc6) <- c("HUC8","HUC10","HUC12","HUC_10_NAME","HUC_12_NAME")
+huc4 <- read.csv("../HUC4_names.csv",stringsAsFactors=F)
+names(huc4) <- c("HUC8","HUC_8_NAME")
+huc4 <- merge(huc6,huc4) %>% select(1,6,2,4,3,5)
+huc4$HUC12 <- as.character(huc4$HUC12)
+huc$HUC12 <- as.character(huc$HUC12)
+huc <- filter(huc,!is.na(HUC12))
+```
+
+```{r,echo=F}
+beechie.agg <- merge(huc,beechie)
+beechie.agg <- group_by(beechie.agg,HUC12) %>% summarise(braided=mean(braided),island_bra=mean(island_bra),meandering=mean(meandering),straight=mean(straight),confined=mean(confined),certainty=mean(certainty),count=n())
+write.csv(beechie.agg,"BeechieHUC6Aggregated.csv",row.names=F)
+```
+
+```{r}
+huc.names <- huc4 %>% merge(data.frame(HUC12=beechie.agg$HUC12) %>% unique()) %>% select(1,6,4,5,2,3)
+huc.coords <- read.csv("../HUC6_Centroids.csv",stringsAsFactors=F) %>% select(3,2,1)
+names(huc.coords) <- c("HUC12","Latitude","Longitude")
+huc.names <- merge(huc.names,huc.coords)
+write.csv(huc.names,"Beechie_HUC_Names.csv",row.names=F)
+```
+

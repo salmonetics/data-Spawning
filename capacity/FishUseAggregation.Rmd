@@ -1,0 +1,62 @@
+---
+title: "Streamnet Fish Use Aggregation"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*. 
+
+```{r,echo=F}
+library(tidyverse)
+```
+
+```{r,echo=F}
+spchin <- read.csv("SpChinook.csv",stringsAsFactors=F) %>% mutate(Species=strsplit(Species," ")[[1]][1])
+spchinhuc <- read.csv("SpChinook_500m_HUC6.csv",stringsAsFactors=F)
+suchin <- read.csv("SuChinook.csv",stringsAsFactors=F) %>% mutate(Species=strsplit(Species," ")[[1]][1])
+suchinhuc <- read.csv("SuChinook_500m_HUC6.csv",stringsAsFactors=F)
+sthd <- read.csv("SuSteelhead.csv",stringsAsFactors=F)
+sthdhuc <- read.csv("SuSteelhead_500m_HUC6.csv",stringsAsFactors=F)
+```
+
+```{r}
+ch.pops <- read.csv("HUC5_Chinook.csv",stringsAsFactors=F)
+sh.pops <- read.csv("HUC5_Steelhead.csv",stringsAsFactors=F)
+#fa.pops <- read.csv("HUC5_FallChinook.csv",stringsAsFactors=F)
+#ch.pops <- rbind(ch.pops,fa.pops)
+```
+
+```{r}
+spchin.all <- merge(spchin,data.frame(OBJECTID=spchinhuc$fid,HUC12=as.character(spchinhuc$HUC_12))) %>% mutate(HUC10= substring(HUC12,1,10)) %>% merge(ch.pops)
+suchin.all <- merge(spchin,data.frame(OBJECTID=suchinhuc$fid,HUC12=as.character(suchinhuc$HUC_12))) %>% mutate(HUC10= substring(HUC12,1,10)) %>% merge(ch.pops)
+sthd.all <- merge(sthd,data.frame(OBJECTID=sthdhuc$fid,HUC12=as.character(sthdhuc$HUC_12))) %>% mutate(HUC10= substring(HUC12,1,10)) %>% merge(sh.pops)
+all <- rbind(spchin.all,suchin.all,sthd.all)
+all$LocationID <- as.character(all$LocationID)
+all$UseType <- ifelse(all$UseTypeID > 97,"Unknown",all$UseType)
+```
+
+```{r,echo=F}
+all.agg <- all %>% group_by(OBJECTID,LocationID,Species,Run,UseType,HUC10,HUC12,CA_POPID) %>% summarise(Count=n())
+all.agg %>% write.csv("StreamnetFishUse_500m.csv",row.names=F)
+```
+
+
+```{r}
+FishUse.agg <- read.csv("StreamnetFishUse_500m.csv",stringsAsFactors=F)
+
+huc6 <- read.csv("../HUC6_names.csv",stringsAsFactors=F)
+names(huc6) <- c("HUC8","HUC10","HUC12","HUC_10_NAME","HUC_12_NAME")
+huc4 <- read.csv("../HUC4_names.csv",stringsAsFactors=F)
+names(huc4) <- c("HUC8","HUC_8_NAME")
+huc4 <- merge(huc6,huc4) %>% select(1,6,2,4,3,5)
+
+FishUse.huc.names <- huc4 %>% merge(data.frame(HUC12=FishUse.agg$HUC12) %>% unique()) %>% select(1,6,4,5,2,3)
+huc.coords <- read.csv("../HUC6_Centroids.csv",stringsAsFactors=F) %>% select(3,2,1)
+names(huc.coords) <- c("HUC12","Latitude","Longitude")
+FishUse.huc.names <- merge(FishUse.huc.names,huc.coords)
+write.csv(FishUse.huc.names,"FishUse_HUC_Names.csv",row.names=F)
+```
+
+
+
