@@ -1,0 +1,1036 @@
+<html lang="en">
+<head>
+    <title>NextStrain Data</title>
+
+    <meta charset="UTF-8">
+	<link rel="stylesheet" type="text/css" href="/script/dc.js/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/script/dc.js/dc.css"/>
+	<script src="/script/jquery-1.12.2.min.js"></script>
+	<script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="/script/dc.js/d3.js"></script>
+	<!--<script src="//d3js.org/topojson.v1.min.js"></script>-->
+	<script type="text/javascript" src="/script/dc.js/colorbrewer.js"></script>
+	<script type="text/javascript" src="/script/crossfilter.min.js"></script>
+	<script type="text/javascript" src="/script/dc.js/dc.js.2.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://cdnjs.cloudflare.com/ajax/libs/spectrum/1.8.0/spectrum.min.css">	
+	<!--
+	<script type="text/javascript" src="SitesBasins.js"></script>
+	<script type="text/javascript" src="CrossTrack4c.js"></script>
+	-->
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css"
+  integrity="sha512-M2wvCLH6DSRazYeZRIm1JnYyh22purTM+FDB5CsyxtQJYeKq83arPe5wgbNmcFXGqiSH2XR8dT/fJISVA1r/zQ=="
+  crossorigin=""/>
+  <!--<link rel="stylesheet" href="/script/dvf.css" type="text/css" media="screen"/>-->
+	<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"
+  integrity="sha512-lInM/apFSqyy1o6s89K4iQUKg6ppXEgsVxT35HbzUupEVRh2Eu9Wdl4tHj7dZO0s1uvplcYGmt3498TtHq+log=="
+  crossorigin=""></script>
+  
+  <script src="https://unpkg.com/leaflet.vectorgrid@latest/dist/Leaflet.VectorGrid.bundled.js"></script>
+  
+  <script src="https://unpkg.com/leaflet.markercluster@1.3.0/dist/leaflet.markercluster.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.css"></link>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.3.0/dist/MarkerCluster.Default.css"></link>
+ 
+
+  <!--<script type="text/javascript" src="/script/leaflet-dvf.js"></script>-->
+  <script type="text/javascript" src="map_utils2.js"></script>
+	<style>
+	.uparrow{
+		font-size: 14;
+		font-weight: bold;
+		color: green;
+		cursor: pointer;
+		border: 2px solid green;
+	}
+	.downarrow{
+		font-size: 14;
+		font-weight: bold;
+		color: red;
+		cursor: pointer;
+		border: 2px solid red;
+	}	
+	.popuptable{
+		font-size: 12;
+	}
+	#chart-year .x.axis text {
+		text-anchor: end !important;;
+		transform: rotate(-45deg);
+		font-size: 12;
+	}
+	#chart-ryear .x.axis text {
+		text-anchor: end !important;;
+		transform: rotate(-45deg);
+		font-size: 12;
+	}	
+	
+	#gallery .x.axis text {
+		text-anchor: end !important;;
+		transform: rotate(-45deg);
+		font-size: 12;
+	}	
+	
+	#redds-year .x.axis text {
+		text-anchor: end !important;;
+		transform: rotate(-45deg);
+		font-size: 12;
+	}
+	
+	.leaflet-popup-content { width:500px; }	
+	img.leaflet-tile{
+		pointer-events: none;
+	}
+	.action_marker{
+		pointer-events: all;
+		cursor: pointer;
+	}	
+	#leafmap{
+		width: 1000px;
+		height: 800px;	
+	}
+	
+	.dataicon{
+		width: 200px;
+		height: 200px;	
+	}
+
+	.damicon i{
+		width: 8px;
+		height: 8px;
+		float: left;
+		margin-right: 5px;
+		
+	}
+	
+	div.damicon{
+		font-size: 20px;
+	}
+
+	.wicon i{
+		width: 10px;
+		height: 10px;
+		float: left;
+		margin-right: 5px;
+	}
+
+	.wtext{
+		font-size: 15px
+	}
+	
+	.control {margin:5px;}
+	#datarow {
+		height: 300px;
+		overflow: scroll;
+	}
+
+
+	#spinner * { 
+		filter: none; 
+		-moz-opacity: 100%; 
+		position: absolute;
+		top: 200px;
+		left: 650px;
+	}
+		
+div.tooltip {   
+  position: absolute;           
+  text-align: left;                            
+  padding: 2px;             
+  font: 16px sans-serif;        
+  background: #fff;   
+  border: 0px;      
+  border-radius: 8px;           
+  pointer-events: none;         
+}
+
+svg	{ overflow: hidden; }
+	
+	table {
+	margin: 10px;
+	padding-top: 2px;
+    padding-right: 10px;
+    padding-bottom: 2px;
+    padding-left: 10px;
+	}
+	
+.dc-table-label {
+font-weight: bold;
+}
+
+.header th {
+text-align: center;	
+}
+
+.tiptable {
+	font: 12px sans-serif;
+}
+
+.axis path, .axis line {
+    fill: none;
+    shape-rendering: crispedges;
+    stroke: #000000;
+}
+.grid .tick {
+    stroke: grey;
+    opacity: 0.5 !important;
+}
+.bar rect {
+        fill: #ed1e79;
+    }
+
+    .bar text.value {
+        fill: black;
+    }
+    circle {
+    fill: none;
+    stroke: black; 
+    stroke-width: 1;
+}
+
+.brush .extent {
+  stroke: #fff;
+  fill-opacity: .125;
+  shape-rendering: crispEdges;
+}
+
+text {
+  cursor: default;
+}
+
+path.line:hover{
+	stroke-width: 2px;
+}
+
+.background path {
+  fill: none;
+  stroke: #ddd;
+  shape-rendering: crispEdges;
+}
+
+.foreground path {
+  fill: none;
+  stroke: steelblue;
+}
+
+.brush .extent {
+  fill-opacity: .3;
+  stroke: #fff;
+  shape-rendering: crispEdges;
+}
+
+.axis line,
+.axis path {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.axis text {
+  text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+  cursor: move;
+}
+
+input[type=range],
+	::-moz-range-track,
+	 ::-ms-track {
+	 -webkit-appearance: none;
+	 background-color: 3f91e5;
+	 width: 400px;
+	 height:40px;
+}
+
+input.vertical {
+	-webkit-appearance: slider-vertical;
+	writing-mode: bt-lr;
+}
+	</style>
+</head>
+<body>
+<div class="container-fluid">
+<div class="row">
+<div class="span12">
+<h2>SAR Browser</h2>
+<div id="dc-data-count">
+        <span id="filtered_fish" class="filter-count"></span> selected out of <span id="total_fish" class="total-count"></span> released&nbsp;<span><a href="javascript:dc.filterAll(); redrawAll();">(reset all)</a></span>
+    </div>
+</div>
+</div>
+<div class="row">
+<div class="span5">
+  <ul class="nav nav-tabs">
+    <li class="active"><a data-toggle="tab" href="#filter1">What Fish</a></li>
+	<li><a data-toggle="tab" href="#filter2">Where Released</a></li>
+  </ul>
+
+<div class="tab-content">
+
+	<div id="filter1" class="tab-pane fade">
+		<div id="chart-basin" class="control">
+			<div><strong>Basin</strong>
+			<a class="reset" href="javascript:basin.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+			</div>
+		</div>
+		<br>
+		<div id="chart-subbasin" class="control">
+			<div><strong>Subbasin</strong>
+			<a class="reset" href="javascript:subbasin.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+			</div>
+		</div>
+		<br>	
+		<div id="chart-relsite" class="control">
+			<div><strong>Release Site</strong>
+			<a class="reset" href="javascript:relsite.filterAll();dc.redrawAll();" style="display: none;">reset</a>
+			</div>
+		</div>		
+		<br>	
+	</div>
+	
+    <div id="filter4" class="tab-pane fade">
+		
+	</div>	
+</div>	
+</div>
+
+<div class="span14">
+
+  <ul class="nav nav-tabs">
+  	<li class="active"><a data-toggle="tab" href="#filter20">Annual SAR Estimates</a></li>
+    <li><a data-toggle="tab" href="#filter10">Map</a></li>
+	<li><a data-toggle="tab" href="#filter40">Gallery</a></li>
+  </ul>
+
+<div class="tab-content">
+<div id="filter10" class="tab-pane fade">
+
+	<div id="leafmap">
+	</div>
+</div>
+
+<div id="filter20" class="tab-pane fade in active">
+
+</div>
+
+<div id="filter40" class="tab-pane fade">
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="row" id="loc_info">
+
+</div>
+
+</div>
+
+
+
+<div id="spinner"><img src="/images/spinner.gif"></div>
+</body>
+<script>
+$("#barsize_slider").on("input", function(){
+	params.bar_width = +this.value;
+	redrawAll();
+});
+
+$("#circlesize_slider").on("input", function(){
+	params.circle_size = +this.value/10;
+	addRelsiteMarkers();
+});
+
+$("#circle_colorpicker").spectrum({
+    color: "orange",
+	hide: function(tinycolor) {
+		params.circle_color = "#" + tinycolor.toHex();
+		addRelsiteMarkers();
+	},
+});
+
+
+var ndx,ndx2, ryear,filtered_count,total_count;
+
+var params = {
+	count: "count",
+	click_mode: "info",
+	circle_size: 3,
+	circle_color: "orange",
+	bar_width: 10,
+	color_coding: "none",
+	selectFish: function(d){return ""},
+	addedFilters: [],
+	timeseries: {
+		svg:{
+			width: 800, 
+			height: 700,
+			margins: {top: 10, bottom: 40, left: 200, right: 40}
+		},
+		huclevel: "Huc4",
+		timestep: "SurveyDate"
+	},
+	salt:{
+		salt0: true,
+		salt1: true,
+		salt2: true,
+		salt3: true,
+		salt4: true,
+	},
+	clipboard: {
+	SAR: ""
+	}	
+};
+	
+params.round = function(number, precision) {
+    var factor = Math.pow(10, precision);
+    var tempNumber = number * factor;
+    var roundedTempNumber = Math.round(tempNumber);
+    return roundedTempNumber / factor;
+};
+
+
+
+var tipdiv = d3.select("body").append("div")   
+    .attr("class", "tooltip")               
+    .style("opacity", 0);		
+
+var min_date,max_date,mindateDim,maxdateDim;
+
+
+var colorCircle = function(site){
+	//console.log(site.count/Object.keys(site.surveys).length)
+	return params.circle_color;
+}
+
+
+var dateFormat = d3.time.format("%m/%d/%Y");
+ 
+
+
+/*
+
+var species = dc.rowChart("#chart-species");
+var subbasin = dc.rowChart("#chart-subbasin");
+var basin = dc.rowChart("#chart-basin");
+var rtpath = dc.rowChart("#chart-rtpath");
+var relsite = dc.pieChart("#chart-relsite");
+var rtype = dc.pieChart("#chart-rtype");
+var run = dc.pieChart("#chart-run");
+var transport = dc.pieChart("#chart-transport");
+var year = dc.barChart("#chart-year");
+var arrday = dc.barChart("#chart-arrday");
+*/
+var dateFormat = d3.time.format("%Y-%m-%d");
+
+function getClone(src) {
+  return Object.assign({}, src);
+}
+
+
+d3.json("http://data.nextstrain.org/ncov.json", function(error2, ndata) {
+
+  if (error2) return console.warn(error2);
+
+  console.log(ndata)
+/*
+ndx = crossfilter(_sdata);
+all = ndx.groupAll();	
+
+var yearDim = ndx.dimension(function(d) {return d.Year.toString();});		
+var runDim = ndx.dimension(function(d) {return d.Run;});
+var rtypeDim = ndx.dimension(function(d) {return d.Rtype;});
+var speciesDim = ndx.dimension(function(d) {return d.Species;});
+var basinDim = ndx.dimension(function(d) {return d.Basin;});
+var subbasinDim = ndx.dimension(function(d) {return rsites_subbasins[d.ReleaseSite].Subbasin;});
+var transportDim = ndx.dimension(function(d) {return d.Transported;});
+var rtpathDim = ndx.dimension(function(d) {return d.RTPath;});
+var relsiteDim = ndx.dimension(function(d) {return d.ReleaseSite;});
+var arrdayDim = ndx.dimension(function(d) {return d.ArrDate;});
+
+var valueAccessor = function(d){
+	//return 100*(d.value.salt0 + d.value.salt1 + d.value.salt2 + d.value.salt3 + d.value.salt4)/d.value.total
+	return d.value.total
+}
+
+var yeargroup = getGroup(yearDim)
+
+var filtered_fish = dc.numberDisplay('#filtered_fish');
+
+var total_fish = dc.numberDisplay('#total_fish');
+
+var fishGroup = ndx.groupAll().reduce(
+          function (p, v) {
+		      ++p.n;
+              p.cur += v.CountOut;
+              return p;
+          },
+          function (p, v) {
+		      --p.n;
+              p.cur -= v.CountOut;
+              return p;
+          },
+          function () { return {n:0,cur:0,tot:params.nfish}; }
+      );
+	  
+filtered_fish.group(fishGroup).valueAccessor(function(d) {
+      return d.cur;
+	});
+	
+	
+total_fish.group(fishGroup).valueAccessor(function(d) {
+      return d.tot;
+	});	 
+	
+species
+	.data(function(group) {
+      return group.all().filter(function(kv) {
+	  return kv.value.total > 0; 
+	  });
+	})
+	.width(300)
+	.height(100)
+	.margins({top: 0, left: 5, right: 40, bottom: 0})
+	.dimension(speciesDim)
+	.group(getGroup(speciesDim))
+	.elasticX(true)
+	.transitionDuration(100)
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)	
+
+console.log("species")
+
+basin
+	.data(function(group) {
+      return group.all().filter(function(kv) {
+	  return kv.value.total > 0; 
+	  });
+	})
+	.width(300)
+	.height(350)
+	.margins({top: 0, left: 5, right: 40, bottom: 0})
+    .dimension(basinDim)
+    .group(getGroup(basinDim))
+	.elasticX(true)
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)	
+	.transitionDuration(100)	
+	//.ordering(function(d) {return subbasin_list.indexOf(d.key); })
+
+console.log("basin")
+
+subbasin
+	.data(function(group) {
+      return group.all().filter(function(kv) {
+	  return kv.value.total > 0; 
+	  });
+	})
+	.width(300)
+	.height(300)
+	.fixedBarHeight(15)
+	.margins({top: 0, left: 5, right: 40, bottom: 0})
+    .dimension(subbasinDim)
+    .group(getGroup(subbasinDim))
+	.elasticX(true)
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)	
+	.transitionDuration(100)
+	.on('postRedraw',function(chart){
+		var ratio = chart.height()/chart.data().length
+		if(ratio < 20.9 | ratio > 21.1){
+			chart.height(21*chart.data().length)
+			chart.render()
+			chart.redraw()
+		}
+		d3.selectAll(".dc-chart g.row text").style("fill","black");
+	})	
+
+console.log("subbasin")
+
+rtpath
+	.data(function(group) {
+      return group.all().filter(function(kv) {
+	  return kv.value.total > 0; 
+	  });
+	})
+	.width(325)
+	.height(140)
+	.margins({top: 0, left: 5, right: 40, bottom: 0})
+    .dimension(rtpathDim)
+    .group(getGroup(rtpathDim))
+	.elasticX(true)
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)
+	.transitionDuration(100)
+
+console.log("rtpath")	
+
+relsite
+	.data(function(group) {
+      return group.all().filter(function(kv) {
+	  return kv.value.total > 0; 
+	  });
+	})
+    .width(300)
+    .height(175)
+    .radius(70)
+	.cx(70)
+	.cy(80)
+	.dimension(relsiteDim)
+	.group(getGroup(relsiteDim))
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)
+	.renderLabel(false)
+	.legend(dc.legend().x(160).y(10).itemHeight(13).gap(5))
+	
+	
+console.log("relsite")	
+	
+run
+	.data(function(group) {
+      return group.all().filter(function(kv) {
+	  return kv.value.total > 0; 
+	  });
+	})
+    .width(300)
+    .height(150)
+    .radius(70)
+	.cx(70)
+	.cy(80)
+	.minAngleForLabel(3)
+	.legend(dc.legend().x(150).y(10).itemHeight(13).gap(5))	
+	.dimension(runDim)
+	.group(getGroup(runDim))
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)
+
+console.log("run")
+
+transport
+    .width(300)
+    .height(150)
+    .radius(70)
+	.cx(70)
+	.cy(80)
+	.minAngleForLabel(3)
+	.legend(dc.legend().x(150).y(10).itemHeight(13).gap(5))	
+	.dimension(transportDim)
+	.group(getGroup(transportDim))
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)
+
+console.log("run")
+	
+rtype
+    .width(300)
+    .height(150)
+    .radius(70)
+	.cx(70)
+	.cy(80)
+	.minAngleForLabel(3)
+	.legend(dc.legend().x(150).y(10).itemHeight(13).gap(5))	
+	.dimension(rtypeDim)
+	.group(getGroup(rtypeDim))
+	.keyAccessor(function (p) {return p.key;})
+	.valueAccessor(valueAccessor)
+	//.colors().range(["#08519c","#4292c6","#aaaaaa"]).domain(["Natural","Hatchery","Mixed"])
+
+console.log("rtype")
+
+
+	dc.renderAll();
+	doAges()
+	StyleChartText(year)
+	d3.selectAll(".dc-chart g.row text").style("fill","black");
+	document.getElementById("spinner").style.visibility = 'hidden';
+
+
+	
+	setFilterToggle(rtype,"chart-rtype")
+	setFilterToggle(rtpath,"chart-rtpath")
+	setFilterToggle(run,"chart-run")
+	setFilterToggle(species,"chart-species")
+	setFilterToggle(subbasin,"chart-subbasin")
+	setFilterToggle(relsite,"chart-relsite")
+*/
+	document.getElementById("spinner").style.visibility = 'hidden';
+});
+
+var StyleChartText = function(chart){
+	chart.select(".x.axis").selectAll("text").style("font-size","15px")
+	chart.select(".y.axis").selectAll("text").style("font-size","15px")
+	chart.select(".y-axis-label").style("font-size","16px")	
+}
+
+var setFilterToggle = function(chart,id){
+	var svg = chart.svg();
+	d3.select("#" + id)
+		.select("strong")
+		.on("click",function(){
+			if(svg.style("display")=="inline")svg.style("display","none")
+			else {
+				svg.style("display","inline")
+				chart.redraw()
+			}
+		})
+		.style("cursor","pointer")
+}
+
+
+
+var plotDensity = function(survived){
+	var keys = []
+	for(i=60;i<244;i++)keys.push(i);
+	var kdata = []
+	
+	
+	
+	arrday.group().top(Infinity).forEach(function(day){
+		var total = survived ? getSurvived(day) : day.value.total;
+		for(j=0;j<total;j++)kdata.push(day.key)
+	})
+
+	var density = kernelDensityEstimator(kernelEpanechnikov(7), keys)(kdata);
+	
+	var y2 = d3.scale.linear().domain([0,.1]).range(arrday.y().range())
+
+    var line= d3.svg.line().x(function (d) {
+         return arrday.x()(new Date(2018, 0, d[0])) + arrday.margins().top;
+     }).y(function (d) {
+        return y2(d[1]) + arrday.margins().left;
+    }).interpolate("linear")
+
+    arrday.svg()
+		.append("path")
+		.attr("d",line(density))
+		.style("fill","none")
+		.style("stroke-width",2)
+		.style("stroke",survived ? "green" : "blue")	
+}
+
+  d3.select("#filter10").on("transitionend", function(d) {
+  //$('#filter20').bind('focusin', function(e){
+  console.log("loaded")
+  if(!params.leafmap){
+	addMap();
+	addRivers();
+	params.RiverLayer.addTo(params.leafmap)
+	params.relsitelayer = L.featureGroup({clickable: true}).addTo(params.leafmap);
+	addRelsiteMarkers()
+	//addDams();
+	addLayerGroups();
+	//addSpSuChinookUse();	
+	addPopBoundaries("styleChinook")
+	addPopBoundaries("styleSteelhead")
+	$('.leaflet-control-layers-selector')[4].click()
+	$('.leaflet-control-layers-selector')[11].click()  
+	//loadRedds();
+	loadPaths();
+	addDams()
+	}
+});
+
+var addRelsiteMarkers = function(){
+		params.relsitelayer.clearLayers()
+		relsite.group().top(Infinity).forEach(function(d){
+			//var color = params.mapoptions.actioncolor=="type" ? actionTypeColorScale(wse.noaa_type) : action_group.colors()(wse.group);
+			var site = relsites[d.key];
+			//console.log(d)
+			var circle = new L.circleMarker([+site.latitude, +site.longitude],{
+			className: "relsite_marker",
+			radius: params.circle_size,
+			stroke: true,
+			color: 'black',
+			opacity: 1,
+			weight: 1,
+			fill: true,
+			fillColor: params.circle_color,
+			fillOpacity: .8
+			});
+			
+			var link = "<h4 id='" + d + "'>" + d + "</h4>";
+			var popup = L.popup({maxWidth: 400, maxHeight: 700, className: "circlepopup"})
+			.setContent(d.key).setLatLng([+site.latitude, +site.longitude])
+			circle.bindPopup(popup)
+			if(d.value.n>0)params.relsitelayer.addLayer(circle)
+		})
+}
+
+
+params.COMID = {}
+var loadPaths = function(){
+	d3.csv("SAR_paths.csv", function(error, data) {	
+		data.forEach(function(d){
+			if(!params.COMID[d.COMID])params.COMID[d.COMID] = {}
+			params.COMID[d.COMID][d.Site]= true;
+		})
+	})
+}
+
+var color_coding = "none";
+
+
+</script>
+
+
+<script>
+const copyToClipboard = str => {
+  const el = document.createElement('textarea');
+  el.value = str;
+  document.body.appendChild(el);
+  el.select();
+  document.execCommand('copy');
+  document.body.removeChild(el);
+  console.log("copied to clipboard")
+};
+
+var writeCSV = function(csv, filename){
+//from https://stackoverflow.com/questions/14964035/how-to-export-javascript-array-info-to-csv-on-client-side
+const rows = [["name1", "city1", "some other info"], ["name2", "city2", "more info"]];
+let csvContent = "data:text/csv;charset=utf-8,";
+rows.forEach(function(rowArray){
+   let row = rowArray.join(",");
+   csvContent += row + "\r\n";
+});
+
+var encodedUri = encodeURI(csvContent);
+var link = document.createElement("a");
+link.setAttribute("href", encodedUri);
+link.setAttribute("download", "my_data.csv");
+document.body.appendChild(link); // Required for FF
+
+link.click(); // This will download the data file named "my_data.csv".
+
+}
+
+Date.prototype.getWeek = function() { 
+  // Create a copy of this date object  
+  var target  = new Date(this.valueOf());  
+  // ISO week date weeks start on monday, so correct the day number  
+  var dayNr   = (this.getDay() + 6) % 7;  
+  // Set the target to the thursday of this week so the  
+  // target date is in the right year  
+  target.setDate(target.getDate() - dayNr + 3);  
+  // ISO 8601 states that week 1 is the week with january 4th in it  
+  var jan4    = new Date(target.getFullYear(), 0, 4);  
+  // Number of days between target date and january 4th  
+  var dayDiff = (target - jan4) / 86400000;    
+  if(new Date(target.getFullYear(), 0, 1).getDay() < 5) {
+    // Calculate week number: Week 1 (january 4th) plus the    
+    // number of weeks between target date and january 4th    
+    return 1 + Math.ceil(dayDiff / 7);    
+  }
+  else {  // jan 4th is on the next week (so next week is week 1)
+    return Math.ceil(dayDiff / 7); 
+  }
+};
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-18774702-1', 'auto');
+  ga('send', 'pageview');
+  
+function kernelDensityEstimator(kernel, X) {
+  return function(V) {
+    return X.map(function(x) {
+      return [x, d3.mean(V, function(v) { return kernel(x - v); })];
+    });
+  };
+}
+
+function kernelEpanechnikov(k) {
+  return function(v) {
+    return Math.abs(v /= k) <= 1 ? 0.75 * (1 - v * v) / k : 0;
+  };
+} 
+
+var wilsonScore = function (positiveScore, total) {
+//from https://github.com/msn0/wilson-score-interval
+    if (total === 0) {
+        return {
+            left: 0,
+            right: 0
+        };
+    }
+
+    // phat is the proportion of successes
+    // in a Bernoulli trial process
+    const phat = positiveScore / total;
+
+    // z is 1-alpha/2 percentile of a standard
+    // normal distribution for error alpha=5%
+    const z = 1.96;
+
+    // implement the algorithm
+    // (http://goo.gl/kgmV3g)
+    const a = phat + z * z / (2 * total);
+    const b = z * Math.sqrt((phat * (1 - phat) + z * z / (4 * total)) / total);
+    const c = 1 + z * z / total;
+
+    return {
+        left: (a - b) / c,
+        right: (a + b) / c
+    };
+};
+
+var cloneSVG = function(chart,target){
+	var index = d3.select("#gallery").selectAll("svg")[0].length;
+	var svg = chart.svg().node().cloneNode(true)
+	var text = d3.select('#clone_text').node().value
+	$("#" + target).append("<h4 class='gallery" + index + "'>" + text + "</h4>")
+	$("#" + target).append(svg);// append the img to the DOM
+	$("#" + target).append("<br class='gallery" + index + "'/>")	
+	d3.select('#clone_text').node().value = ""
+	//attribute up the added
+	d3.select("#gallery").selectAll("svg").each(function(d,i){
+		if(i==index){
+			var _svg = d3.select(this)
+			_svg.attr("class","gallery" + index)
+			addCloseButton(_svg,index)
+		}	
+	})
+}
+
+var addCloseButton = function(svg1,index){
+	var width = svg1.attr("width")
+	svg1
+	  .append("image")
+      .attr("xlink:href", "close_icon.jpg")
+      .attr("x", width-22)
+      .attr("y", 0)
+      .attr("width", 20)
+      .attr("height", 20)
+	  .attr("class", "close_button")
+	  .style("opacity",1)
+	  .on("mouseover", function(d) {
+            tipdiv.transition()        
+                .duration(20)      
+                .style("opacity", 1);      
+            tipdiv.html('Delete This')  
+                .style("left", (d3.event.pageX + 20) + "px")     
+                .style("top", (d3.event.pageY - 10) + "px");    
+        })                  
+	  .on("mouseout", function(d) {       
+            tipdiv.transition()        
+                .duration(20)      
+                .style("opacity", 0);   
+		})
+	  .on("click", function(d){			
+		d3.selectAll(".gallery" + index).remove();
+		tipdiv.style("opacity", 0);
+		});
+}
+
+var createImagePlot = function(chart,target){
+	 svgString = getSVGString(chart.svg().node())
+	 var imgElem = svgString2Image( svgString, chart.width(), chart.height(), 'png');
+	 console.log(d3.select('#' + target))
+	 $('#'+target).append(imgElem);// append the img to the DOM
+	 $('#'+target).append("<br/>")
+   }
+
+// Below are the functions that handle actual exporting:
+// getSVGString ( svgNode ) and svgString2Image( svgString, width, height, format, callback )
+function getSVGString( svgNode ) {
+	svgNode.setAttribute('xlink', 'http://www.w3.org/1999/xlink');
+	var cssStyleText = getCSSStyles( svgNode );
+	appendCSS( cssStyleText, svgNode );
+
+	var serializer = new XMLSerializer();
+	var svgString = serializer.serializeToString(svgNode);
+	svgString = svgString.replace(/(\w+)?:?xlink=/g, 'xmlns:xlink='); // Fix root xlink without namespace
+	svgString = svgString.replace(/NS\d+:href/g, 'xlink:href'); // Safari NS namespace fix
+
+	return svgString;
+
+	function getCSSStyles( parentElement ) {
+		var selectorTextArr = [];
+
+		// Add Parent element Id and Classes to the list
+		selectorTextArr.push( '#'+parentElement.id );
+		for (var c = 0; c < parentElement.classList.length; c++)
+				if ( !contains('.'+parentElement.classList[c], selectorTextArr) )
+					selectorTextArr.push( '.'+parentElement.classList[c] );
+
+		// Add Children element Ids and Classes to the list
+		var nodes = parentElement.getElementsByTagName("*");
+		for (var i = 0; i < nodes.length; i++) {
+			var id = nodes[i].id;
+			if ( !contains('#'+id, selectorTextArr) )
+				selectorTextArr.push( '#'+id );
+
+			var classes = nodes[i].classList;
+			for (var c = 0; c < classes.length; c++)
+				if ( !contains('.'+classes[c], selectorTextArr) )
+					selectorTextArr.push( '.'+classes[c] );
+		}
+
+		// Extract CSS Rules
+		var extractedCSSText = "";
+		for (var i = 0; i < document.styleSheets.length; i++) {
+			var s = document.styleSheets[i];
+			
+			try {
+			    if(!s.cssRules) continue;
+			} catch( e ) {
+		    		if(e.name !== 'SecurityError') throw e; // for Firefox
+		    		continue;
+		    	}
+
+			var cssRules = s.cssRules;
+			for (var r = 0; r < cssRules.length; r++) {
+				if ( contains( cssRules[r].selectorText, selectorTextArr ) )
+					extractedCSSText += cssRules[r].cssText;
+			}
+		}
+		
+
+		return extractedCSSText;
+
+		function contains(str,arr) {
+			return arr.indexOf( str ) === -1 ? false : true;
+		}
+
+	}
+
+	function appendCSS( cssText, element ) {
+		var styleElement = document.createElement("style");
+		styleElement.setAttribute("type","text/css"); 
+		styleElement.innerHTML = cssText;
+		var refNode = element.hasChildNodes() ? element.children[0] : null;
+		element.insertBefore( styleElement, refNode );
+	}
+}
+
+
+//function svgString2Image( svgString, width, height, format, callback ) {
+function svgString2Image( svgString, width, height, format) {
+	var format = format ? format : 'png';
+
+	var imgsrc = 'data:image/svg+xml;base64,'+ btoa( unescape( encodeURIComponent( svgString ) ) ); // Convert SVG string to data URL
+
+	var canvas = document.createElement("canvas");
+	var context = canvas.getContext("2d");
+
+	canvas.width = width;
+	canvas.height = height;
+
+	var image = new Image();
+	image.onload = function() {
+		context.clearRect ( 0, 0, width, height );
+		context.drawImage(image, 0, 0, width, height);
+
+		canvas.toBlob( function(blob) {
+			var filesize = Math.round( blob.length/1024 ) + ' KB';
+			//if ( callback ) callback( blob, filesize );
+		});
+
+		
+	};
+
+	image.src = imgsrc;
+	return(image)
+} 
+
+
+</script>
+</html>
